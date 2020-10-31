@@ -12,11 +12,8 @@ import com.example.eggwatch.interfaces.IEggWatch;
 import com.example.eggwatch.managers.EggWatchManager;
 import com.example.eggwatch.models.EggModel;
 
-import org.w3c.dom.Text;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements Runnable, IEggWatch {
