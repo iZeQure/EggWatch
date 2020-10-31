@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">EggWatch</string>
+    <string name="titleText">Vælg Æg</string>
+    <string name="textiViewTitle">Vælg Æg</string>
+    <string name="egg_options_one_button_name">Blødkogt</string>
+    <string name="egg_options_two_button_name">Smilende</string>
+    <string name="egg_options_three_button_name">Hårdkogt</string>
+    <string name="egg_time_value">00:00</string>
+    <string name="egg_start_button_name">Start Æggeur</string>
+</resources>
