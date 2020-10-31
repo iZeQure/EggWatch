@@ -2,9 +2,10 @@ package com.example.eggwatch.managers;
 
 import android.os.CountDownTimer;
 
+import com.example.eggwatch.interfaces.IEggWatch;
 import com.example.eggwatch.models.EggModel;
 
-public class EggWatchManager{
+public class EggWatchManager implements IEggWatch {
     // Define a count down timer.
     private CountDownTimer countDownTimer;
 
@@ -19,8 +20,13 @@ public class EggWatchManager{
 
     // Egg Watch Constructor, which takes an Egg Model to provide the right values.
     public EggWatchManager(EggModel eggModel) {
-        // Initializing a new count down timer with the egg's cook time and the update speed.
-        countDownTimer = new CountDownTimer(eggModel.getCookTime(), eggWatchUpdateSpeed) {
+        setTimeLeftForEggWatch(eggModel.getCookTime());
+    }
+
+    // Start egg watch.
+    public void startEggWatch() {
+        // Initializing a new count down timer with the egg's time left on the cooking and the update speed.
+        countDownTimer = new CountDownTimer(timeLeftForEggWatch, eggWatchUpdateSpeed) {
             public void onTick(long millisUntilFinished) {
                 // Set the time left of the egg's cooking time.
                 setTimeLeftForEggWatch(millisUntilFinished);
@@ -30,17 +36,20 @@ public class EggWatchManager{
                 setEggWatchStarted(false);
             }
         };
-    }
 
-    // Start egg watch.
-    public void startEggWatch() {
+        // Set the time state to started.
         setEggWatchStarted(true);
+
+        // Start the countdown timer.
         countDownTimer.start();
     }
 
     // Stop egg watch.
     public void stopEggWatch() {
+        // Set the time state to started.
         setEggWatchStarted(false);
+
+        // Stops / Cancels the countdown timer.
         countDownTimer.cancel();
     }
 

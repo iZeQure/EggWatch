@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.eggwatch.interfaces.IEggWatch;
 import com.example.eggwatch.managers.EggWatchManager;
 import com.example.eggwatch.models.EggModel;
 
@@ -18,28 +19,48 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Runnable, IEggWatch {
     // Define strings that contains final values for the start / stop button.
     private final String START_EGG_TEXT = "start æggeur";
     private final String STOP_EGG_TEXT = "stop æggeur";
 
+    // Define delay for when text view is updated.
+    private final long UPDATE_TEXTVIEW_DELAY = 1000;
+
     // Define the Egg Watch Manager object.
-    EggWatchManager eggWatchManager;
+    private EggWatchManager eggWatchManager;
     // Define the Egg Model Object.
-    EggModel egg;
+    private EggModel egg;
 
     // Initialize a new calendar, used to set the date time in millis.
-    Calendar calendar = Calendar.getInstance();;
+    private Calendar calendar = Calendar.getInstance();;
     // Initialize a new Date Format object, used to format the date in millis to readable minutes / seconds.
-    DateFormat dateFormat = new SimpleDateFormat("mm:ss");;
+    private DateFormat dateFormat = new SimpleDateFormat("mm:ss");;
 
     // Define a new runnable thread. - Used for testing, as it's not working.
-    Runnable runnable;
+    private Runnable runnable;
+    private Handler updateTextViewHandler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+    }
+
+    // A new thread that handles the Egg Time Text View with the time remaining of the egg cooking.
+    @Override
+    public void run() {
+        // set the current time left of cooking for the egg.
+        setEggWatchCookingTimeLeft(eggWatchManager.getTimeLeftForEggWatch());
+
+        // Check the state and timer of the egg watch.
+        if (eggWatchManager.isEggWatchStarted() && eggWatchManager.getTimeLeftForEggWatch() >= 0) {
+            // Continue running method.
+            updateTextViewHandler.postDelayed(this ,UPDATE_TEXTVIEW_DELAY);
+        }
+        else {
+            resetEggApp();
+        }
     }
 
     // Create an onClick listener, for when the egg option is clicked.
@@ -48,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         switch (view.getId()) {
             case R.id.eggOptionOneButton:
                 // Create a new Egg Model for option one.
-                egg = new EggModel("Blødkogt", 300000);
+                egg = new EggModel("Blødkogt", 30000);
                 break;
             case R.id.eggOptionTwoButton:
                 // Create a new Egg Model for option two.
@@ -67,22 +88,6 @@ public class MainActivity extends AppCompatActivity {
         // Initialize the egg watch manager with the created egg model.
         eggWatchManager = new EggWatchManager(egg);
 
-        // Initialize a new runnable thread, used to set the time left text in the view.
-        // Currently isn't working. - View is either freezing or nothing happens.
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                /*while (eggWatchManager.isEggWatchStarted()) {
-                    System.out.println("Cooking timer : " + eggWatchManager.getTimeLeftForEggWatch());
-                }*/
-                    setEggWatchCookingTimeLeft(eggWatchManager.getTimeLeftForEggWatch());
-
-                /*if(eggWatchManager.getTimeLeftForEggWatch() < 0 && eggWatchManager.isEggWatchStarted()) {
-                    setEggWatchCookingTimeLeft(eggWatchManager.getTimeLeftForEggWatch());
-                }*/
-            }
-        };
-
         // Call the set egg watch text view.
         setEggWatchTextView();
 
@@ -90,27 +95,15 @@ public class MainActivity extends AppCompatActivity {
         enableEggWatchStateButton();
     }
 
-    // Sets the time left from the cooking into minutes / seconds.
-    private void setEggWatchCookingTimeLeft(long timeLeft) {
-        // Sets the time in millis with the current time left from the cooking.
-        calendar.setTimeInMillis(timeLeft);
-        ((TextView)findViewById(R.id.eggTextTimer)).setText(dateFormat.format(calendar.getTime()));
-    }
-
-    // Sets the default timer of the egg to cook.
-    private void setEggWatchTextView() {
-        // Sets the time in millis from the created egg models time.
-        calendar.setTimeInMillis(egg.getCookTime());
-        ((TextView)findViewById(R.id.eggTextTimer)).setText(dateFormat.format(calendar.getTime()));
-    }
-
     // Create onClick listener method, for when the start / stop button is clicked.
     public void onClick_eggWatchStateButton(View view) {
         // Check the state of the egg watch.
         if (!eggWatchManager.isEggWatchStarted())
-            eggWatchManager.startEggWatch();
+            // Start egg watch.
+            startEggWatch();
         else
-            eggWatchManager.stopEggWatch();
+            // Stop egg watch.
+            stopEggWatch();
 
         // Set the buttons text.
         setEggWatchStateButtonText();
@@ -118,8 +111,36 @@ public class MainActivity extends AppCompatActivity {
         // Set the egg options.
         setEggOptionsState();
 
-        // Run the thread. - Is not working.
-        runnable.run();
+        // Run new thread on updating the Text View egg timer.
+        run();
+    }
+
+    // Start the Egg Watch.
+    public void startEggWatch() {
+        eggWatchManager.startEggWatch();
+    }
+
+    // Stop the Egg Watch.
+    public void stopEggWatch() {
+        eggWatchManager.stopEggWatch();
+    }
+
+    // Sets the time left from the cooking into minutes / seconds.
+    private void setEggWatchCookingTimeLeft(long timeLeft) {
+        // Sets the time in millis with the current time left from the cooking.
+        calendar.setTimeInMillis(timeLeft);
+
+        // Convert the calendar time to a readable datetime format.
+        ((TextView)findViewById(R.id.eggTextTimer)).setText(dateFormat.format(calendar.getTime()));
+    }
+
+    // Sets the default timer of the egg to cook.
+    private void setEggWatchTextView() {
+        // Sets the time in millis from the created egg models time.
+        calendar.setTimeInMillis(egg.getCookTime());
+
+        // Convert the calendar time to a readable datetime format.
+        ((TextView)findViewById(R.id.eggTextTimer)).setText(dateFormat.format(calendar.getTime()));
     }
 
     // Sets the Start / Stop buttons text.
@@ -149,5 +170,22 @@ public class MainActivity extends AppCompatActivity {
     // Enables the Start / Stop button.
     private void enableEggWatchStateButton() {
         ((Button)findViewById(R.id.eggWatchStateButton)).setEnabled(true);
+    }
+
+    // Disables the Start / Stop button.
+    private void disableEggWatchStateButton() {
+        ((Button)findViewById(R.id.eggWatchStateButton)).setEnabled(false);
+    }
+
+    // Resets the app to default state.
+    private void resetEggApp() {
+        // Stop egg watch.
+        stopEggWatch();
+        // Set the text after it's done.
+        setEggWatchStateButtonText();
+        // Disables the state button if timer is done.
+        disableEggWatchStateButton();
+        // Set the egg options state.
+        setEggOptionsState();
     }
 }
